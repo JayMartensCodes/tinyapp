@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/JayMartensCodes/tinyapp/issues"
   },
-  "homepage": "https://github.com/JayMartensCodes/tinyapp#readme"
+  "homepage": "https://github.com/JayMartensCodes/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
