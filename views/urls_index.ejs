@@ -12,6 +12,9 @@
   <%- include('partials/_header') %>
   <main style="margin: 1em;">
     <h3>My URLs</h3>
+    <% if(error) { %>
+      <p style="color: red;"><%= error %></p>
+    <% } else { %>
     <table class="table">
       <thead>
         <tr>
@@ -32,6 +35,8 @@
         <% } %>
       </tbody>
     </table>
+    <% } %>
+    <form method="GET" action="/urls/new"><button style="color: #B00000; background-color: white; border: 1px solid #B00000; border-radius: 10%">Create a new Short Link</Link></button></form>
   </main>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

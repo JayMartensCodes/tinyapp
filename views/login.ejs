@@ -13,9 +13,11 @@
   <body>
 
     <%- include('partials/_header') %>
-
     <main style="margin: 1em;">
       <h3>Login to Account</h3>
+      <% if(error) { %>
+        <p style="color: red;"><%= error %></p>
+      <% } %>
       <form class="form-inline" action="/login" method="POST">
         <div class="form-group mb-2">          
             <label for="email">Enter your email:</label>
