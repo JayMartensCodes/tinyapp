@@ -1,14 +1,37 @@
+// initial set up
+
 const express = require("express");
 const app = express();
-const methodOverride = require('method-override');
-const PORT = 8080; // default port 8080
+
+// default port 8080
+
+const PORT = 8080;
+
+// encrypts the cookies and allows the app to parse cookies
+
 const cookieSession = require('cookie-session');
+
+// allows password hashing
+
 const bcrypt = require('bcrypt');
-const { getUserByEmail } = require('./helpers');
+
+// bringing in the helper function
+
+const { getUserByEmail, urlsForUser, addVisitor, formatHTTP, generateRandomString } = require('./helpers');
+
+// allows the app to parse the form data form POST requests
+
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(methodOverride('_method'));
+
+// needed so the app can parse the ejs files
+
 app.set("view engine", "ejs");
+
+// importing and setting up method override which allows me to make my app more RESTful through the use of PUTs and DELETEs
+
+const methodOverride = require('method-override');
+app.use(methodOverride('_method'));
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2'],
@@ -35,42 +58,7 @@ const users = {
   }
 };
 
-const generateRandomString = () => {
-  return Math.random().toString(36).substring(7);
-};
-
-const urlsForUser = (id) => {
-  let result = {};
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      result[url] = urlDatabase[url];
-    }
-  }
-  return result;
-};
-
-const addVisitor = (url, visitorID) => {
-  if (!visitorID) {
-    return false;
-  } else if (url.uniqueVisitors[visitorID]) {
-    url.visits.push({
-      timestamp: Date.now(),
-      visitorID
-    });
-  } else {
-    url.uniqueVisitors[visitorID] = visitorID;
-    url.visits.push({
-      timestamp: Date.now(),
-      visitorID
-    });
-  }
-};
-
-const formatHTTP = function(address) {
-  if (!address.match(/^http/))
-    address = `http://${address}`;
-  return address;
-};
+// home route, redirects to log in page if not logged in, or the urls page if logged in
 
 app.get("/", (req, res) => {
   if (!req.session['user_id']) {
@@ -80,14 +68,18 @@ app.get("/", (req, res) => {
   }
 });
 
+// show the urls table based on the logged in user
+
 app.get("/urls", (req, res) => {
   let templateVars = {
     user: users[req.session['user_id']],
-    urls: urlsForUser(req.session['user_id']),
+    urls: urlsForUser(req.session['user_id'], urlDatabase),
     error: req.session['user_id'] ? "" : "Log in to see your URLs."
   };
   res.render("urls_index", templateVars);
 });
+
+// show the creating new url UI
 
 app.get("/urls/new", (req, res) => {
   if (!req.session['user_id']) {
@@ -101,6 +93,8 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+// shows the register page
+
 app.get("/register", (req, res) => {
   if (req.session.user_id) {
     res.redirect('/urls');
@@ -112,6 +106,8 @@ app.get("/register", (req, res) => {
     res.render("register", templateVars);
   }
 });
+
+// show the specific url pages with all the data
 
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
@@ -130,6 +126,8 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// track some analytics, then redirects to the corresponding url
+
 app.get("/u/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
     if (!req.session.visitor_id) {
@@ -142,6 +140,8 @@ app.get("/u/:shortURL", (req, res) => {
   }
 });
 
+// shows the login page
+
 app.get("/login", (req, res) => {
   if (req.session['user_id']) {
     res.redirect('/urls');
@@ -153,6 +153,8 @@ app.get("/login", (req, res) => {
     res.render("login", templateVars);
   }
 });
+
+// adds a new url to the urlDatabase object
 
 app.post("/urls", (req, res) => {
   if (req.session['user_id']) {
@@ -170,6 +172,8 @@ app.post("/urls", (req, res) => {
   }
 });
 
+// deletes a url from the urlDatabase
+
 app.delete("/urls/:shortURL/delete", (req, res) => {
   if (!req.session['user_id']) {
     res.send("<p>User not logged in<p>");
@@ -181,9 +185,13 @@ app.delete("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
+// redirect to the page that lets you edit the url
+
 app.post("/urls/:shortURL/edit", (req, res) => {
   res.redirect(`/urls/${req.params.shortURL}`);
 });
+
+// Updates the url in urlDatabase
 
 app.put("/urls/:shortURL/update", (req, res) => {
   if (!req.session['user_id']) {
@@ -196,6 +204,8 @@ app.put("/urls/:shortURL/update", (req, res) => {
     res.send("<p>You don't own this URL or it no longer exsits.");
   }
 });
+
+// checks the login logic then if all is correct, creates a session cookie and redirects you
 
 app.post("/login", (req, res) => {
   let user = getUserByEmail(req.body.email, users);
@@ -211,10 +221,14 @@ app.post("/login", (req, res) => {
   }
 });
 
+// destroys all cookies
+
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect('/urls');
 });
+
+// checks if it's valid account information, then creates a new user
 
 app.post("/register", (req, res) => {
   if (getUserByEmail(req.body.email, users)) {
@@ -240,6 +254,8 @@ app.post("/register", (req, res) => {
     res.redirect('/urls');
   }
 });
+
+// opens up the connection
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
