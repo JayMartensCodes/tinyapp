@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -47,6 +48,12 @@ const urlsForUser = (id) => {
     }
   }
   return result;
+};
+
+const formatHTTP = function(address) {
+  if (!address.match(/^http/))
+    address = `http://${address}`;
+  return address;
 };
 
 app.get("/", (req, res) => {
@@ -109,9 +116,10 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  let formattedHTTP = formatHTTP(req.body.longURL);
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
+    longURL: formattedHTTP,
     userID: req.cookies['user_id']
   };
   res.redirect(`/urls/${shortURL}`);
@@ -130,14 +138,15 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
 app.post("/urls/:shortURL/update", (req, res) => {
   if (urlDatabase[req.params.shortURL].userID === req.cookies['user_id']) {
-    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+    let formattedHTTP = formatHTTP(req.body.longURL);
+    urlDatabase[req.params.shortURL].longURL = formattedHTTP;
   }
   res.redirect('/urls');
 });
 
 app.post("/login", (req, res) => {
   let user = checkEmail(req.body.email);
-  if (!user || user.password !== req.body.password) {
+  if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
     res.status(403).redirect('/login');
   } else {
     res.cookie('user_id', user.id);
@@ -158,7 +167,7 @@ app.post("/register", (req, res) => {
     users[userId] = {
       id: userId,
       email: req.body.email,
-      password: req.body.password
+      password: bcrypt.hashSync(req.body.password, 10)
     };
     res.cookie('user_id', userId);
     res.redirect('/urls');
