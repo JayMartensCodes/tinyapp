@@ -11,15 +11,15 @@ app.use(methodOverride('_method'));
 app.set("view engine", "ejs");
 app.use(cookieSession({
   name: 'session',
-  keys: ['boomer', 'humor'],
+  keys: ['key1', 'key2'],
 
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }));
 
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW", visits: [], uniqueVisitors: {} },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW", visits: [], uniqueVisitors: {} }
 };
 
 const users = {
@@ -47,6 +47,23 @@ const urlsForUser = (id) => {
     }
   }
   return result;
+};
+
+const addVisitor = (url, visitorID) => {
+  if (!visitorID) {
+    return false;
+  } else if (url.uniqueVisitors[visitorID]) {
+    url.visits.push({
+      timestamp: Date.now(),
+      visitorID
+    });
+  } else {
+    url.uniqueVisitors[visitorID] = visitorID;
+    url.visits.push({
+      timestamp: Date.now(),
+      visitorID
+    });
+  }
 };
 
 const formatHTTP = function(address) {
@@ -85,7 +102,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  if (req.session['user_id']) {
+  if (req.session.user_id) {
     res.redirect('/urls');
   } else {
     let templateVars = {
@@ -99,8 +116,8 @@ app.get("/register", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     user: users[req.session['user_id']],
+    url: urlDatabase[req.params.shortURL],
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL] ? urlDatabase[req.params.shortURL].longURL : "",
     error: urlDatabase[req.params.shortURL] ? "" : "Invalid tiny link."
   };
   if (!urlDatabase[req.params.shortURL]) {
@@ -114,7 +131,15 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL] ? res.redirect(urlDatabase[req.params.shortURL].longURL) : res.status(404).send("<p>Invalid URL</p>");
+  if (urlDatabase[req.params.shortURL]) {
+    if (!req.session.visitor_id) {
+      req.session.visitor_id = generateRandomString();
+    }
+    addVisitor(urlDatabase[req.params.shortURL], req.session.visitor_id);
+    res.redirect(urlDatabase[req.params.shortURL].longURL);
+  } else {
+    res.status(404).send("<p>Invalid URL</p>");
+  }
 });
 
 app.get("/login", (req, res) => {
@@ -135,7 +160,9 @@ app.post("/urls", (req, res) => {
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {
       longURL: formattedHTTP,
-      userID: req.session['user_id']
+      userID: req.session['user_id'],
+      visits: [],
+      uniqueVisitors: {}
     };
     res.redirect(`/urls/${shortURL}`);
   } else {
