@@ -1,11 +1,13 @@
 const express = require("express");
 const app = express();
+const methodOverride = require('method-override');
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const { getUserByEmail } = require('./helpers');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(methodOverride('_method'));
 app.set("view engine", "ejs");
 app.use(cookieSession({
   name: 'session',
@@ -141,7 +143,7 @@ app.post("/urls", (req, res) => {
   }
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL/delete", (req, res) => {
   if (!req.session['user_id']) {
     res.send("<p>User not logged in<p>");
   } else if (urlDatabase[req.params.shortURL].userID === req.session['user_id']) {
@@ -156,7 +158,7 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   res.redirect(`/urls/${req.params.shortURL}`);
 });
 
-app.post("/urls/:shortURL/update", (req, res) => {
+app.put("/urls/:shortURL/update", (req, res) => {
   if (!req.session['user_id']) {
     res.send("<p>User not logged in<p>");
   } else if (urlDatabase[req.params.shortURL].userID === req.session['user_id']) {
