@@ -10,6 +10,13 @@ const PORT = 8080;
 // encrypts the cookies and allows the app to parse cookies
 
 const cookieSession = require('cookie-session');
+app.use(cookieSession({
+  name: 'session',
+  keys: ['boomer', 'humor'],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
 
 // allows password hashing
 
@@ -32,13 +39,6 @@ app.set("view engine", "ejs");
 
 const methodOverride = require('method-override');
 app.use(methodOverride('_method'));
-app.use(cookieSession({
-  name: 'session',
-  keys: ['key1', 'key2'],
-
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}));
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW", visits: [], uniqueVisitors: {} },
@@ -176,12 +176,12 @@ app.post("/urls", (req, res) => {
 
 app.delete("/urls/:shortURL/delete", (req, res) => {
   if (!req.session['user_id']) {
-    res.send("<p>User not logged in<p>");
+    res.send("<p>User not logged in</p>");
   } else if (urlDatabase[req.params.shortURL].userID === req.session['user_id']) {
     delete urlDatabase[req.params.shortURL];
     res.redirect('/urls');
   } else {
-    res.send("<p>You don't own this URL or it no longer exsits.");
+    res.send("<p>You don't own this URL or it no longer exsits.</p>");
   }
 });
 
@@ -201,7 +201,7 @@ app.put("/urls/:shortURL/update", (req, res) => {
     urlDatabase[req.params.shortURL].longURL = formattedHTTP;
     res.redirect('/urls');
   } else {
-    res.send("<p>You don't own this URL or it no longer exsits.");
+    res.send("<p>You don't own this URL or it no longer exsits.</p>");
   }
 });
 
