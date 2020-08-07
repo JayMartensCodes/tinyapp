@@ -71,7 +71,7 @@ app.get("/", (req, res) => {
 // show the urls table based on the logged in user
 
 app.get("/urls", (req, res) => {
-  let templateVars = {
+  const templateVars = {
     user: users[req.session['user_id']],
     urls: urlsForUser(req.session['user_id'], urlDatabase),
     error: req.session['user_id'] ? "" : "Log in to see your URLs."
@@ -85,7 +85,7 @@ app.get("/urls/new", (req, res) => {
   if (!req.session['user_id']) {
     res.redirect('/login');
   } else {
-    let templateVars = {
+    const templateVars = {
       user: users[req.session['user_id']],
       error: ""
     };
@@ -99,7 +99,7 @@ app.get("/register", (req, res) => {
   if (req.session.user_id) {
     res.redirect('/urls');
   } else {
-    let templateVars = {
+    const templateVars = {
       user: users[req.session['user_id']],
       error: ""
     };
@@ -146,7 +146,7 @@ app.get("/login", (req, res) => {
   if (req.session['user_id']) {
     res.redirect('/urls');
   } else {
-    let templateVars = {
+    const templateVars = {
       user: users[req.session['user_id']],
       error: ""
     };
@@ -158,7 +158,7 @@ app.get("/login", (req, res) => {
 
 app.post("/urls", (req, res) => {
   if (req.session['user_id']) {
-    let formattedHTTP = formatHTTP(req.body.longURL);
+    const formattedHTTP = formatHTTP(req.body.longURL);
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {
       longURL: formattedHTTP,
@@ -197,7 +197,7 @@ app.put("/urls/:shortURL/update", (req, res) => {
   if (!req.session['user_id']) {
     res.send("<p>User not logged in<p>");
   } else if (urlDatabase[req.params.shortURL].userID === req.session['user_id']) {
-    let formattedHTTP = formatHTTP(req.body.longURL);
+    const formattedHTTP = formatHTTP(req.body.longURL);
     urlDatabase[req.params.shortURL].longURL = formattedHTTP;
     res.redirect('/urls');
   } else {
@@ -208,9 +208,9 @@ app.put("/urls/:shortURL/update", (req, res) => {
 // checks the login logic then if all is correct, creates a session cookie and redirects you
 
 app.post("/login", (req, res) => {
-  let user = getUserByEmail(req.body.email, users);
+  const user = getUserByEmail(req.body.email, users);
   if (!user || !bcrypt.compareSync(req.body.password, user.password)) {
-    let templateVars = {
+    const templateVars = {
       user: users[req.session['user_id']],
       error: "User does not exist or incorrect password"
     };
@@ -232,19 +232,19 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   if (getUserByEmail(req.body.email, users)) {
-    let templateVars = {
+    const templateVars = {
       user: users[req.session['user_id']],
       error: "Email already taken."
     };
     res.render("register", templateVars);
   } else if (req.body.email === "" || req.body.password === "") {
-    let templateVars = {
+    const templateVars = {
       user: users[req.session['user_id']],
       error: "Please fill in the both boxes."
     };
     res.render("register", templateVars);
   } else {
-    let userId = generateRandomString();
+    const userId = generateRandomString();
     users[userId] = {
       id: userId,
       email: req.body.email,
